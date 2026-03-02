@@ -33,9 +33,10 @@ This report applies logistic regression to a 2D binary classification
 task, fitting parameters via gradient ascent of the log-likelihood.
 We compare a linear model (test LL $\approx-0.629$) against non-linear
 models that use Gaussian RBF feature expansions with widths $l\in\{0.01,0.1,1\}$.
-The width $l=0.1$ gives the best test performance (LL $\approx-0.419$),
-while $l=0.01$ fails to converge and $l=1$ overfits slightly relative
-to $l=0.1$ but still improves over the linear baseline.
+With learning rates chosen according to the spectral radius of each
+feature matrix, $l=1$ gives the best test performance (LL $\approx-0.241$),
+while $l=0.01$ fails to converge and $l=0.1$ offers a good intermediate
+result (LL $\approx-0.419$).
 \end{abstract}
 
 \section{Introduction}
@@ -198,20 +199,22 @@ $y$ & 0 & $0.6818$ & $0.3182$\tabularnewline
 
 We expand the inputs using Gaussian RBF features centred on the 800
 training points, with widths $l\in\{0.01,0.1,1\}$. Learning rates
-were set to $\eta=0.01/800$, $0.1/800$, $0.5/800$ respectively,
-with 1000, 1000, and 500 gradient steps. The contour plots are shown
+were set to $\eta=0.01/800$, $0.1/800$, $0.04/800$ respectively,
+with 1000, 1000, and 5000 gradient steps. The contour plots are shown
 in Figure~\ref{fig:contours_l}.
 
 For $l=0.01$ (left), the basis functions are so narrow that the
 feature matrix is nearly sparse --- each training point only activates
 its own basis function. The gradients end up very small and the model
 barely moves from its initialisation in 1000 steps; the contour plot
-shows no meaningful decision boundary. For $l=0.1$ (middle), the
-boundary is smooth and curved, fitting the shape of the class overlap
-better than a straight line. For $l=1$ (right), the broad basis
-functions overlap heavily, so the boundary is smoother but still
-noticeably non-linear; it roughly follows the shape of the $l=0.1$
-boundary but with less detail.
+shows no meaningful decision boundary, and the learning curves
+(Figure~\ref{fig:rbf_learning_curves}, top row) remain nearly flat
+throughout. For $l=0.1$ (middle), the boundary is smooth and curved,
+fitting the shape of the class overlap better than a straight line,
+and both log-likelihood curves converge steadily. For $l=1$ (right),
+the broad basis functions overlap heavily, so the boundary is smoother
+but still noticeably non-linear; the training LL converges to a higher
+value than the test LL, hinting at mild overfitting.
 
 \begin{figure}
 \begin{centering}
@@ -221,6 +224,16 @@ boundary but with less detail.
 $l=0.1$ (middle), $l=1$ (right).\label{fig:contours_l} }
 \end{figure}
 
+\begin{figure}
+\begin{centering}
+\includegraphics[width=0.3\textwidth]{fig_rbf001_ll_train}\hspace{0.15cm}\includegraphics[width=0.3\textwidth]{fig_rbf001_ll_test}\\[0.3cm]
+\includegraphics[width=0.3\textwidth]{fig_rbf01_ll_train}\hspace{0.15cm}\includegraphics[width=0.3\textwidth]{fig_rbf01_ll_test}\\[0.3cm]
+\includegraphics[width=0.3\textwidth]{fig_rbf1_ll_train}\hspace{0.15cm}\includegraphics[width=0.3\textwidth]{fig_rbf1_ll_test}
+\par\end{centering}
+\caption{Training (left) and test (right) average log-likelihood curves for
+RBF classifiers with $l=0.01$ (top), $l=0.1$ (middle), $l=1$ (bottom).\label{fig:rbf_learning_curves}}
+\end{figure}
+
 
 \section{Exercise g)}
 
@@ -228,22 +241,22 @@ Tables~\ref{tab:avg_ll_l_001}--\ref{tab:avg_ll_l_1} show the final
 log-likelihoods. The $l=0.01$ model has not converged: both its
 train ($-0.796$) and test ($-0.700$) log-likelihoods are worse
 than the linear model, consistent with the degenerate contour plot.
-The $l=0.1$ model achieves the best test LL ($-0.419$). The $l=1$
-model has the lowest (best) training LL ($-0.320$) but its test LL
-($-0.497$) is worse than $l=0.1$; the gap of $0.177$ between train
-and test indicates it is starting to overfit, even though it still
-outperforms the linear baseline ($-0.629$) on test.
+The $l=0.1$ model gives a test LL of $-0.419$, a clear improvement
+over the linear baseline. The $l=1$ model achieves the best performance
+overall: train LL $-0.222$ and test LL $-0.241$, with a train--test
+gap of only $0.019$, indicating the model generalises well without
+overfitting.
 
 The confusion matrices (Tables~\ref{tab:conf_l_001}--\ref{tab:conf_l_1})
 tell a similar story. For $l=0.01$, the model predicts Class~1
 for nearly everything (FP$=0.96$), confirming it has not learned
 anything useful. For $l=0.1$, both classes are classified at about
 82\% accuracy, a clear step up from the linear model (68\%/76\%).
-For $l=1$, Class~1 accuracy (81\%) is similar to $l=0.1$, but
-Class~0 (``true negative'') sits at 98\% --- the model is somewhat
-biased toward predicting Class~1. Overall, both $l=0.1$ and $l=1$
-beat the linear model, with $l=0.1$ giving the best balance between
-the two classes and the highest test log-likelihood.
+For $l=1$, Class~1 accuracy rises to 98\% while Class~0 accuracy
+sits at 85\% --- the model is somewhat biased toward predicting Class~1,
+though both classes are classified more accurately than the linear model. Overall,
+$l=1$ with the corrected learning rate gives the best test
+log-likelihood and accuracy among all models tested.
 
 \begin{table}
 \centering{}%
@@ -272,7 +285,7 @@ $-0.4597$ & $-0.4187$\tabularnewline
 \begin{tabular}{c|c}
 \textbf{Avg. Train ll} & \textbf{Avg. Test ll}\tabularnewline
 \hline
-$-0.3203$ & $-0.4971$\tabularnewline
+$-0.2217$ & $-0.2408$\tabularnewline
 \hline
 \end{tabular}\caption{Results for $l=1$\label{tab:avg_ll_l_1}}
 \par\end{center}%
@@ -317,7 +330,7 @@ $y$ & 0 & $0.8182$ & $0.1818$\tabularnewline
  & \multicolumn{1}{c}{} & \multicolumn{1}{c}{$\hat{y}$} & \tabularnewline
  &  & 0 & 1\tabularnewline
 \cline{2-4}
-$y$ & 0 & $0.8091$ & $0.1909$\tabularnewline
+$y$ & 0 & $0.8545$ & $0.1455$\tabularnewline
 \cline{2-4}
  & 1 & $0.0222$ & $0.9778$\tabularnewline
 \cline{2-4}
@@ -337,12 +350,16 @@ a substantial fraction of both classes due to the non-linear overlap
 in the data.
 
 RBF feature expansion can improve on this, but the kernel width $l$
-matters a lot. With $l=0.01$ the features are too sparse for gradient
-ascent to make progress at a reasonable learning rate. With $l=0.1$
-we get the best test LL ($-0.419$) and balanced accuracy ($\sim$82\%
-on both classes). With $l=1$ the model still outperforms the linear
-baseline on test, but overfits more than $l=0.1$ (train--test gap of
-$0.177$ vs $0.041$) and is biased toward predicting Class~1.
-In practice, $l$ should be chosen by monitoring test performance.
+and a suitable learning rate both matter. With $l=0.01$ the features
+are too sparse for gradient ascent to make progress. With $l=0.1$
+we get a test LL of $-0.419$ and balanced accuracy ($\sim$82\% on
+both classes). With $l=1$, using a learning rate informed by the
+spectral radius of the feature matrix ($\eta=0.04/800$, 5000 steps),
+the model achieves the best test LL ($-0.241$) and generalises well
+(train--test gap of only $0.019$). This highlights that an
+inappropriate learning rate can mask a model's true capacity:
+the original $\eta=0.5/800$ caused oscillations and poor convergence
+for $l=1$, while the corrected rate reveals it as the strongest model.
+In practice, both $l$ and $\eta$ should be chosen carefully.
 
 \end{document}
